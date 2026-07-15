@@ -31,7 +31,7 @@ public class CouponService(InvestApiClient investApiClient) : ICouponService
                 .ToImmutableArray();
             
             var now = DateTime.UtcNow;
-            var from = Timestamp.FromDateTime(now);
+            var from = Timestamp.FromDateTime(now.AddMonths(-6));
             var to = Timestamp.FromDateTime(now.AddMonths(6));
             
             var coupons = new List<Coupon>();
@@ -62,7 +62,9 @@ public class CouponService(InvestApiClient investApiClient) : ICouponService
                 );
             }
             
-            bondsDictionary.Add(new AccountCoupons(account.Name, coupons.OrderBy(c => c.When).ToArray()));
+            var upcomingCoupons = coupons.Where(c => c.When > now).OrderBy(c => c.When).ToArray();
+            var paidCoupons = coupons.Where(c => c.When <= now).OrderByDescending(c => c.When).ToArray();
+            bondsDictionary.Add(new AccountCoupons(account.Name, upcomingCoupons, paidCoupons));
         }
 
         return bondsDictionary.AsReadOnly();

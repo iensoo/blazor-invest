@@ -25,6 +25,11 @@
     background-color: #ccc;
 }
 
+/* Inner tabs (upcoming / paid payments) */
+.tab.inner {
+    margin-bottom: 12px;
+}
+
 /* Style the tab content */
 .tabcontent {
     display: none;

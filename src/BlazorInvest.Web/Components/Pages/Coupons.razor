@@ -10,12 +10,76 @@
 @code {
     private IReadOnlyList<AccountCoupons>? _accountCoupons;
     private int _activeIndex;
+    private int _activePaymentIndex;
 
     protected override async Task OnInitializedAsync()
     {
         var coupons = await CouponService.GetCouponsByAccountsAsync();
         _accountCoupons = coupons.ToList();
     }
+
+    private RenderFragment CouponsTable(Coupon[] coupons) => __builder =>
+    {
+        if (coupons.Any())
+        {
+            var groupedCoupons = coupons
+                .GroupBy(c => c.When.GetMonthName())
+                .ToDictionary(c => c.Key, c => c.ToArray());
+
+            <table class="table table-hover">
+                <tbody>
+                    @foreach (var grouping in groupedCoupons)
+                    {
+                        var monthTotalTaxed = 0m;
+                        <tr style="background-color: lightgray; text-transform: uppercase">
+                            <td colspan="6" style="text-align: center; font-size: 20px"><strong>@grouping.Key</strong></td>
+                        </tr>
+
+                        @foreach (var coupon in grouping.Value)
+                        {
+                            var subTotal = coupon.Quantity * coupon.Amount;
+                            var subTotalTaxed = subTotal * 0.87m;
+                            monthTotalTaxed += subTotalTaxed;
+
+                            <tr>
+                                <td>
+                                    <strong>
+                                        @coupon.When.ToString("dd.MM.yyyy")
+                                    </strong>
+                                </td>
+                                <td>
+                                    @coupon.Title
+                                </td>
+                                <td>
+                                    @coupon.Quantity
+                                </td>
+                                <td>
+                                    @coupon.Amount
+                                </td>
+                                <td>
+                                    @subTotal
+                                </td>
+                                <td>
+                                    <strong>
+                                        @Math.Round(subTotalTaxed, 2)
+                                    </strong>
+                                </td>
+                            </tr>
+                        }
+
+                        <tr>
+                            <td colspan="5" style="text-align: right"><strong>Итого</strong></td>
+                            <td><strong>@Math.Round(monthTotalTaxed, 2)</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="alert alert-info">Нет данных по выплатам</div>
+        }
+    };
 }
 
 @if (_accountCoupons is null)
@@ -37,67 +101,18 @@ else
     @for (var i = 0; i < _accountCoupons.Count; i++)
     {
         <div class="tabcontent @(i == _activeIndex ? "active" : "")">
-            @{
-                var coupons = _accountCoupons[i].Coupons;
-                if (coupons.Any())
-                {
-                    var groupedCoupons = coupons
-                    .GroupBy(c => c.When.GetMonthName())
-                    .ToDictionary(c => c.Key, c => c.ToArray());
+            <div class="tab inner">
+                <button class="tablinks @(_activePaymentIndex == 0 ? "active" : "")" @onclick="() => _activePaymentIndex = 0">Предстоящие</button>
+                <button class="tablinks @(_activePaymentIndex == 1 ? "active" : "")" @onclick="() => _activePaymentIndex = 1">Выплаченные</button>
+            </div>
 
-                <table class="table table-hover">
-                    <tbody>
-                        @foreach (var grouping in groupedCoupons)
-                        {
-                            var monthTotalTaxed = 0m;
-                            <tr style="background-color: lightgray; text-transform: uppercase">
-                                <td colspan="6" style="text-align: center; font-size: 20px"><strong>@grouping.Key</strong></td>
-                            </tr>
-
-                            @foreach (var coupon in grouping.Value)
-                            {
-                                var subTotal = coupon.Quantity * coupon.Amount;
-                                var subTotalTaxed = subTotal * 0.87m;
-                                monthTotalTaxed += subTotalTaxed;
-
-                                <tr>
-                                    <td>
-                                        <strong>
-                                            @coupon.When.ToString("dd.MM.yyyy")
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        @coupon.Title
-                                    </td>
-                                    <td>
-                                        @coupon.Quantity
-                                    </td>
-                                    <td>
-                                        @coupon.Amount
-                                    </td>
-                                    <td>
-                                        @subTotal
-                                    </td>
-                                    <td>
-                                        <strong>
-                                            @Math.Round(subTotalTaxed, 2)
-                                        </strong>
-                                    </td>
-                                </tr>
-                            }
-
-                            <tr>
-                                <td colspan="5" style="text-align: right"><strong>Итого</strong></td>
-                                <td><strong>@Math.Round(monthTotalTaxed, 2)</strong></td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-                }
-                else
-                {
-                    <div class="alert alert-info">Нет данных по выплатам</div>
-                }
+            @if (_activePaymentIndex == 0)
+            {
+                @CouponsTable(_accountCoupons[i].UpcomingCoupons)
+            }
+            else
+            {
+                @CouponsTable(_accountCoupons[i].PaidCoupons)
             }
         </div>
     }

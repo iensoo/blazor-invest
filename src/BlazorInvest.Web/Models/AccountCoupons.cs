@@ -1,3 +1,3 @@
-﻿namespace BlazorInvest.Web.Models;
+namespace BlazorInvest.Web.Models;
 
-public record AccountCoupons(string Name, Coupon[] Coupons);
+public record AccountCoupons(string Name, Coupon[] UpcomingCoupons, Coupon[] PaidCoupons);
