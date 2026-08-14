@@ -31,8 +31,9 @@ public class CouponService(InvestApiClient investApiClient) : ICouponService
                 .ToImmutableArray();
             
             var now = DateTime.UtcNow;
-            var from = Timestamp.FromDateTime(now.AddMonths(-6));
-            var to = Timestamp.FromDateTime(now.AddMonths(6));
+            var currentMonthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var from = Timestamp.FromDateTime(currentMonthStart.AddMonths(-6));
+            var to = Timestamp.FromDateTime(currentMonthStart.AddMonths(7).AddTicks(-1));
             
             var coupons = new List<Coupon>();
             foreach (var position in positions)
